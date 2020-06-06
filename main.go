@@ -31,7 +31,6 @@ func main() {
 			) +
 				" %"
 		}
-		log.Warning("battery ", battery.State.String())
 
 		if int(batteryPercent) <= 15 && battery.State.String() == "Discharging" {
 			var info []string
