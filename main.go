@@ -12,10 +12,15 @@ import (
 )
 
 const (
-	showingTime = "20000"
+	showingTime = "500"
+	sleepTime   = 5 * time.Second
 )
 
+var PERFORMANCE_MODE string
+
 func main() {
+	batteryMode := false
+	powerMode := false
 	for {
 		// battery data:
 		var batteryStatus string
@@ -46,6 +51,62 @@ func main() {
 			}
 		}
 
-		time.Sleep(2 * time.Minute)
+		if battery.State.String() == "Discharging" && batteryMode == false {
+			//set battery mode
+			err := setBatteryMode()
+			if err != nil {
+				log.Error(err)
+			}
+			log.Info("set battery mode")
+			batteryMode = true
+			powerMode = false
+		}
+
+		if battery.State.String() != "Discharging" && powerMode == false {
+			//set power mode
+			err := setPowerMode()
+			if err != nil {
+				log.Error(err)
+			}
+			log.Info("set power mode")
+			powerMode = true
+			batteryMode = false
+		}
+
+		time.Sleep(sleepTime)
 	}
+}
+
+func setPowerMode() error {
+	setMaxFrequency := exec.Command(
+		"/bin/sh", "-c", "sudo cpupower frequency-set --max 5.2GHz",
+	)
+	setMinFrequency := exec.Command(
+		"/bin/sh", "-c", "sudo cpupower frequency-set --min 4.4GHz",
+	)
+
+	err := setMinFrequency.Run()
+	if err != nil {
+		return err
+	}
+
+	err = setMaxFrequency.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setBatteryMode() error {
+	setMaxFrequencyForDischarging := exec.Command(
+		"/bin/sh", "-c", "sudo cpupower frequency-set --max 3.2GHz",
+	)
+
+	err := setMaxFrequencyForDischarging.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
