@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	showingTime = "500"
-	sleepTime   = 5 * time.Second
+	SHOWING_TIME         = "500"
+	SLEEP_TIME           = 5 * time.Second
+	LOW_BATTERY_LEVEL    = 15
+	MEDIUM_BATTERY_LEVEL = 50
 )
 
 var PERFORMANCE_MODE string
@@ -37,12 +39,13 @@ func main() {
 				" %"
 		}
 
-		if int(batteryPercent) <= 15 && battery.State.String() == "Discharging" {
+		if int(batteryPercent) <= LOW_BATTERY_LEVEL &&
+			battery.State.String() == "Discharging" {
 			var info []string
 			info = append(info, batteryStatus)
 			notify := exec.Command(
 				"notify-send", "-t",
-				showingTime, "info",
+				SHOWING_TIME, "info",
 				strings.Join(info, "\n"),
 			)
 			err = notify.Run()
@@ -51,29 +54,33 @@ func main() {
 			}
 		}
 
-		if battery.State.String() == "Discharging" && batteryMode == false {
-			//set battery mode
+		if battery.State.String() == "Discharging" && !batteryMode {
+			//set min power mode (for battery)
 			err := setBatteryMode()
 			if err != nil {
 				log.Error(err)
 			}
-			log.Info("set battery mode")
+
+			log.Info("set min power mode (for battery)")
 			batteryMode = true
 			powerMode = false
 		}
 
-		if battery.State.String() != "Discharging" && powerMode == false {
-			//set power mode
+		if battery.State.String() != "Discharging" &&
+			!powerMode &&
+			int(batteryPercent) > MEDIUM_BATTERY_LEVEL {
+			//set max power mode
 			err := setPowerMode()
 			if err != nil {
 				log.Error(err)
 			}
-			log.Info("set power mode")
+
+			log.Info("set max power mode")
 			powerMode = true
 			batteryMode = false
 		}
 
-		time.Sleep(sleepTime)
+		time.Sleep(SLEEP_TIME)
 	}
 }
 
