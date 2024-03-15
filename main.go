@@ -107,7 +107,7 @@ func setPowerMode() error {
 
 func setBatteryMode() error {
 	setMaxFrequencyForDischarging := exec.Command(
-		"/bin/sh", "-c", "sudo cpupower frequency-set --max 3GHz",
+		"/bin/sh", "-c", "sudo cpupower frequency-set --min 3GHz",
 	)
 
 	err := setMaxFrequencyForDischarging.Run()
